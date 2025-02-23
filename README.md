@@ -9,7 +9,7 @@ Kaggle 데이터셋을 이용한 비만/수면시간 예측 모델
 사용한 데이터셋:
 
 - https://www.kaggle.com/datasets/ruchikakumbhar/obesity-prediction
-- https://www.kaggle.com/datasets/govindaramsriram/sleep-time-predictionhttps://www.kaggle.com/datasets/govindaramsriram/sleep-time-prediction
+- https://www.kaggle.com/datasets/govindaramsriram/sleep-time-prediction
 
 브랜치 나누어 작업 중:
 
