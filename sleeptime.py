@@ -9,8 +9,7 @@ df = df.drop('ReadingTime', axis=1)
 feature = ['WorkoutTime', 'PhoneTime', 'WorkHours', 'CaffeineIntake', 'RelaxationTime']
 label = ['SleepTime']
 
-corr_matrix = df.corr()
-
-plt.title('Correlation Matrix')
-sns.heatmap(corr_matrix, annot=True)
+df.hist(figsize=(10, 8))
 plt.show()
+
+# 3시간 미만 수면 \\ 12시간 초과 수면 이상치
