@@ -5,7 +5,7 @@ from imblearn.over_sampling import SMOTE
 import numpy as np
 
 # CSV 파일 불러오기
-df = pd.read_csv("FirstAIProject/data/Obesity_prediction.csv")
+df = pd.read_csv(r"C:\Users\admin\Desktop\ai data\FirstAIProject\data\Obesity_prediction.csv")
 
 # ✅ 1. 중복 데이터 제거
 df.drop_duplicates(inplace=True)
