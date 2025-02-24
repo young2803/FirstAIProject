@@ -6,7 +6,13 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.regularizers import l2
+import json
+
+# 테스트 횟수
+count = 1
 
 # Load dataset
 df = pd.read_csv('datasets/sleeptime_prediction_dataset.csv')
@@ -22,52 +28,81 @@ scaler = MinMaxScaler()
 df[features] = scaler.fit_transform(df[features])
 
 # Split data
-x_train, x_test, y_train, y_test = train_test_split(df[features], df[label], test_size=0.3, random_state=42)
+x_train, x_test, y_train, y_test = train_test_split(df[features], df[label], test_size=0.2, random_state=42)
 
 # Hyperparameters
-batch_sizes = [16, 32, 64]
+batch_sizes = [16, 32, 64, 128]
 learning_rates = [0.001, 0.01, 0.1]
-optimizers = ['adam', 'rmsprop']
+l2_alpha = [0.0001, 0.001, 0.01]
 
 best_mse = float('inf')
 best_params = {}
 
-# Loop through hyperparameters
-for batch_size in batch_sizes:
-    for lr in learning_rates:
-        for op in optimizers:
-            print(f'Training with batch_size={batch_size}, lr={lr}, optimizer={op}')
-            
-            # Clear previous models
-            tf.keras.backend.clear_session()
+# JSON 파일 저장 경로
+json_file_path = 'model_results.json'
 
-            # Define model
-            model = tf.keras.Sequential([
-                tf.keras.layers.Dense(64, activation='relu', input_shape=(x_train.shape[1],)),
-                tf.keras.layers.Dense(64, activation='relu'),
-                tf.keras.layers.Dense(1, activation='linear')  # Regression output
-            ])
+# 결과를 저장할 리스트
+results = []
 
-            # Select optimizer
-            if op == 'adam':
-                opt = Adam(learning_rate=lr)
-            elif op == 'rmsprop':
-                opt = RMSprop(learning_rate=lr)
+# 25번 반복 실행
+for i in range(1, count+1):
+    best_mse = float('inf')
+    best_params = {}
 
-            # Compile model
-            model.compile(optimizer=opt, loss='mse', metrics=['mae'])
+    def model_test():
+        global best_mse, best_params  # 함수 내에서 수정 가능하도록 global 선언
 
-            # Train model
-            history = model.fit(x_train, y_train, epochs=50, batch_size=batch_size, validation_split=0.2, verbose=0)
+        # Loop through hyperparameters
+        for batch_size in batch_sizes:
+            for lr in learning_rates:
+                for al in l2_alpha:
+                    print(f'[{i}] Training with batch_size={batch_size}, lr={lr}, al={al}')
+                    
+                    # Clear previous models
+                    tf.keras.backend.clear_session()
 
-            # Predict and evaluate
-            y_pred = model.predict(x_test).flatten()
-            mse = mean_squared_error(y_test, y_pred)
+                    # Define model with Dropout and Regularization
+                    model = tf.keras.Sequential([
+                        tf.keras.layers.Dense(128, activation='relu', input_shape=(x_train.shape[1],), kernel_regularizer=l2(al)),  # L2 Regularization
+                        tf.keras.layers.Dropout(0.2),  # Dropout to prevent overfitting
+                        tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=l2(al)),
+                        tf.keras.layers.Dropout(0.4),
+                        tf.keras.layers.Dense(32, activation='relu', kernel_regularizer=l2(al)),
+                        tf.keras.layers.Dropout(0.25),
+                        tf.keras.layers.Dense(1, activation='linear')  # Regression output
+                    ])
 
-            if mse < best_mse:
-                best_mse = mse
-                best_params = {'batch_size': batch_size, 'learning_rate': lr, 'optimizer': op}
+                    # Compile model with correct learning rate
+                    optimizer = Adam(learning_rate=lr)
+                    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
-# Output best parameters
-print(f'Best MSE: {best_mse}')
-print(f'Best Parameters: {best_params}')
+                    # EarlyStopping to avoid overfitting
+                    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+                    # Train model
+                    history = model.fit(x_train, y_train, epochs=100, batch_size=batch_size, validation_split=0.2, verbose=0, callbacks=[early_stopping])
+
+                    # Predict and evaluate
+                    y_pred = model.predict(x_test).flatten()
+                    mse = mean_squared_error(y_test, y_pred)
+
+                    if mse < best_mse:
+                        best_mse = mse
+                        best_params = {'batch_size': batch_size, 'learning_rate': lr, 'l2_alpha': al}
+
+        # Save the best result from this iteration
+        result = {
+            'iteration': i,
+            'best_mse': best_mse,
+            'best_params': best_params
+        }
+        results.append(result)
+
+    # 실행
+    model_test()
+
+    # JSON 파일에 한 줄씩 저장
+    with open(json_file_path, 'a') as f:
+        f.write(json.dumps(results[-1]) + '\n')
+
+print(f'모든 결과가 {json_file_path} 파일에 저장되었습니다.')
