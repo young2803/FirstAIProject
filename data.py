@@ -9,6 +9,10 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 # 데이터 로드 및 전처리
+
+# 아직은 시각화로는 무슨 방법으로 스케일링할 지 판단할 수 없어서 
+# 정규화와 표준화 두개 다 만들어서 비교해보기로 함
+
 df = pd.read_csv('datasets/sleeptime_prediction_dataset.csv')
 df = df.drop('ReadingTime', axis=1)
 df = df[(df['SleepTime'] <= 10) & (df['SleepTime'] >= 3)]
@@ -61,3 +65,5 @@ print(f"[정규화] 테스트 손실(MSE): {test_loss_minmax:.4f}, 테스트 MAE
 # 표준화 모델 평가
 test_loss_standard, test_mae_standard = model_standard.evaluate(X_test_standard, y_test_standard)
 print(f"[표준화] 테스트 손실(MSE): {test_loss_standard:.4f}, 테스트 MAE: {test_mae_standard:.4f}")
+
+# 정규화 모델이 더 적합
