@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from imblearn.over_sampling import SMOTE
 import numpy as np
+import pickle
 
 # CSV 파일 불러오기
 df = pd.read_csv(r"C:\Users\admin\Desktop\ai data\FirstAIProject\data\Obesity_prediction.csv")
@@ -52,6 +53,9 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_val = scaler.transform(X_val)
 X_test = scaler.transform(X_test)
+
+with open("scaler.pkl", "wb") as f:
+    pickle.dump(scaler, f)
 
 # ✅ 10. 클래스 불균형 처리 (SMOTE 적용)
 smote = SMOTE(random_state=42)
