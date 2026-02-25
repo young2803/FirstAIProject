@@ -21,3 +21,6 @@ models/*.pkl
 # ===== log/cash =====
 *.log
 *.tmp
+
+# ===== data =====
+data/
